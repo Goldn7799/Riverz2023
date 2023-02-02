@@ -252,7 +252,7 @@ const Page = {
             update()
           }, 250)
           }).catch((err)=>{
-            chat.innerHTML(err)
+            chat.innerHTML = err
             setTimeout(()=>{
               update()
             }, 5000)
