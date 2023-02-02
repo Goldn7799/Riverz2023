@@ -12,7 +12,7 @@ import {
   } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 const provider = new GoogleAuthProvider();
 const root = document.getElementById("root");
-const API = "http://localhost:3000"
+const API = "http://0.tcp.ap.ngrok.io:16420"
 //End Setup
 
 //Variable Setup
@@ -205,7 +205,7 @@ const Page = {
     </table>
     `
     const chat = document.getElementById("chat");
-    let cacheChat;
+    let cacheChat, currentChat;
     const sendText = (text)=>{
       let dates = Date();
       if (text){
@@ -244,6 +244,10 @@ const Page = {
             cacheChat += `<p>${data.sender} | ${data.date}=> ${data.text}</p>`
           });
           chat.innerHTML = cacheChat;
+          if(currentChat !== cacheChat){
+            chat.scrollTop = chat.scrollHeight
+            currentChat = cacheChat;
+          };
           setTimeout(()=>{
             update()
           }, 250)
