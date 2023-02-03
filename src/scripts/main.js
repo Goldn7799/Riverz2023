@@ -247,12 +247,12 @@ const Page = {
         setTimeout(()=>{ homesSC(); }, 250)
       };
     }
-    root.innerHTML = `LOGED IN
+    root.innerHTML = `<center>LOGED IN
     <button onClick="logOut()">LogOut</button>
     <button onClick="global()">Global Chat</button>
-    <button onClick="editname()">Edit Name</button>
-    <div><img class="potho" src="${data.Photo}" >
-    <p id="usernameDisplay">Loading...</p></div>`
+    <button onClick="editname()">Edit Name</button></center>
+    <center id="homeInfo"><img class="potho" src="${data.Photo}" >
+    <p id="usernameDisplay">Loading...</p></center>`
     homesSC();
   },
   "Verify": ()=>{
