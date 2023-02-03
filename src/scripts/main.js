@@ -16,20 +16,21 @@ const API = "https://1ecf-114-5-250-233.ap.ngrok.io"
 //End Setup
 
 //Variable Setup
-let data = {}, providerId, names, globalChatActived;
+let data = {}, dataUser = {}, providerId, names, globalChatActived, homeActivated, userUpdate = false, userIDS=0, userCIDS=0, dataC = {};
 //End Variable Setup
 
 //Check
 const auth = getAuth();
 onAuthStateChanged(auth, (user)=>{
   if(user){
-    user.providerData.map((data)=>{
-      providerId = data.providerId;
+    user.providerData.map((datas)=>{
+      providerId = datas.providerId;
     })
     if(user.emailVerified){
       if (providerId === "google.com"){
         data = {
           "Username": user.displayName,
+          "Id": user.email.substring(0, user.email.length - 10),
           "Email": user.email,
           "Photo": user.photoURL
         }
@@ -42,10 +43,50 @@ onAuthStateChanged(auth, (user)=>{
         }
         data = {
           "Username": names,
+          "Id": email.substring(0, email.length - 10),
           "Email": user.email,
           "Photo": "./src/assets/profile.png"
         }
       }
+      fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
+        dataUser = res;
+        dataUser.map(dts=>{
+          userCIDS++;
+          if(dts.id === data.Id){
+            userUpdate = true;
+            userIDS = userCIDS-1;
+            dataC = dts;
+          };
+        })
+        if(!userUpdate){
+          fetch(`${API}/RiverzRequest`, {
+            method: 'POST', // or 'PUT'
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              "avabile": false,
+              "edit": false,
+              "profile": data.Photo,
+              "name": data.Username,
+              "text": "",
+              "id": data.Id,
+              "date": ""
+            })
+          })
+            .then((response) => { return response.json() })
+            .then((datas) => {
+              console.log("SUCCES Load")
+              // console.log('Success:', data);
+            })
+            .catch((error) => {
+              alert("Error", error)
+              // console.error('Error:', error);
+          });
+        }else {
+          data.Username = dataC.name;
+        }
+      }).catch(err=>{ alert("Server Closed"); })
       Page.Home();
     }else {
       Page.Verify();
@@ -118,6 +159,39 @@ const SendEmailVerify = ()=>{
 }
 
 const logOut = () => signOut(auth);
+
+const EditName = ()=>{
+  let names = prompt("New Name");
+  if(names&&!names.includes("<")&&!names.includes(">")){
+    fetch(`${API}/RiverzRequest`, {
+      method: 'POST', // or 'PUT'
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "avabile": false,
+        "edit": userIDS,
+        "profile": data.Photo,
+        "name": names,
+        "text": "",
+        "id": data.Id,
+        "date": ""
+      })
+    })
+      .then((response) => { return response.json() })
+      .then((datas) => {
+        alert("Sukses Ganti Nama");
+        window.location.reload();
+        // console.log('Success:', data);
+      })
+      .catch((error) => {
+        alert("Gagal Mengubah Nama", error)
+        // console.error('Error:', error);
+    });
+  }else{
+    alert("NAMA KOSONG ATAU MENGANDUNG KARAKTER ILEGAL < or >")
+  }
+}
 //end Auth
 
 //Loader
@@ -140,6 +214,7 @@ const loader = {
 //Page
 const Page = {
   "Login": ()=>{
+    homeActivated = false;
     root.innerHTML = `<button onClick="emailPage()">Login With Email</button>
     <button onClick="GoogleLogin()">Login With Google</button>`;
 
@@ -165,18 +240,32 @@ const Page = {
   },
   "Home": ()=>{
     globalChatActived = false;
+    homeActivated = true;
+    const homesSC = ()=>{
+      if(homeActivated){
+        document.getElementById("usernameDisplay").innerText = data.Username;
+        setTimeout(()=>{ homesSC(); }, 250)
+      };
+    }
     root.innerHTML = `LOGED IN
     <button onClick="logOut()">LogOut</button>
     <button onClick="global()">Global Chat</button>
+    <button onClick="editname()">Edit Name</button>
     <div><img class="potho" src="${data.Photo}" >
-    <p>${data.Username}</p></div>`
+    <p id="usernameDisplay">Loading...</p></div>`
+    homesSC();
   },
   "Verify": ()=>{
+    homeActivated = false;
     root.innerHTML = `<button onClick="SendEmailVerify()">Send Email Verify Link</button>`
   },
   "GlobalChat": ()=>{
+    homeActivated = false;
     globalChatActived = true;
-    root.innerHTML = `<h1>Global Chat</h1><button onClick="home()">Back</button>
+    fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
+      dataUser = res;
+    }).catch(err=>{ alert("Server Closed"); Page.Home(); })
+    root.innerHTML = `<h1>Global Chat</h1><button onClick="home()">Back</button><button id="chatsCount">0 Chats</button>
     <div id="chat"><center><div class="jelly"></div>
 
     <svg width="0" height="0" class="jelly-maker">
@@ -199,58 +288,74 @@ const Page = {
     </svg></center></div>
     <table class="tableSend">
       <tr>
+        <td><button class="down" onClick="globalScrollChat()">Down</button></td>
         <td><input type="text" id="textChat" name="chat" placeholder="Texts"></td>
         <td><div id="sendD"><button id="send" onClick="sendText(document.getElementById('textChat').value)">Send</button></div></td>
       </tr>
     </table>
     `
     const chat = document.getElementById("chat");
-    let cacheChat, currentChat;
+    let cacheChat, currentChat, anotherUserProfile, chatsCount, anotherUserName;
     const sendText = (text)=>{
       let dates = Date();
-      if (text){
+      if (text&&(!text.includes("<"))&&(!text.includes(">"))){
         document.getElementById("sendD").innerHTML = `<button id="send" style="background-color: blue;">Send</button>`
-      fetch(`${API}/RiverzRequest`, {
-        method: 'POST', // or 'PUT'
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          "avabile": true,
-          "text": text,
-          "sender": data.Username,
-          "date": dates.substring(16, 25)
-        }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          document.getElementById("textChat").value = "";
-          document.getElementById("sendD").innerHTML = `<button id="send" onClick="sendText(document.getElementById('textChat').value)">Send</button>`
-          // console.log('Success:', data);
+        fetch(`${API}/RiverzRequest`, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            "avabile": true,
+            "text": text,
+            "id": data.Id,
+            "date": dates.substring(16, 25)
+          })
         })
-        .catch((error) => {
-          alert("Error", error)
-          // console.error('Error:', error);
-      });
+          .then((response) => response.json())
+          .then((datas) => {
+            document.getElementById("textChat").value = "";
+            document.getElementById("sendD").innerHTML = `<button id="send" onClick="sendText(document.getElementById('textChat').value)">Send</button>`
+            // console.log('Success:', data);
+          })
+          .catch((error) => {
+            alert("Error", error)
+            // console.error('Error:', error);
+        });
       }else {
-        alert("Chat Kosong")
+        alert("Chat Kosong/mengandung huruf ilagal seperi <,>")
       }
+    }
+    const globalScrollChat = ()=>{
+      chat.scrollTop = chat.scrollHeight
     }
     const update = ()=>{
       cacheChat = ``;
+      chatsCount = 0;
       if(globalChatActived){
         fetch(`${API}/RiverzChat`, {method: "GET"}).then(ress => { return ress.json() }).then(res =>{
           res.map(data => {
-            cacheChat += `<p>${data.sender} | ${data.date}=> ${data.text}</p>`
+            anotherUserProfile = "";
+            chatsCount++;
+            dataUser.map(dt=>{
+              if (dt.id === data.id){
+                anotherUserProfile = dt.profile;
+                anotherUserName = dt.name;
+              }
+            })
+            cacheChat += `<p><img class="profileChat" src="${(anotherUserProfile) ? anotherUserProfile : "./src/assets/profile.png"}">${(anotherUserName) ? anotherUserName : "NoName"} | ${data.date}=> ${data.text}</p>`
           });
           chat.innerHTML = cacheChat;
-          if(currentChat !== cacheChat){
-            chat.scrollTop = chat.scrollHeight
-            currentChat = cacheChat;
-          };
-          setTimeout(()=>{
-            update()
-          }, 250)
+          document.getElementById("chatsCount").innerHTML = `${chatsCount} Chat Loaded`
+          setTimeout(() => {
+            if(currentChat !== cacheChat&&chatsCount > 6){
+              chat.scrollTop = chat.scrollHeight
+              currentChat = cacheChat;
+            };
+            setTimeout(()=>{
+              update()
+            }, 100)
+          }, 250);
           }).catch((err)=>{
             chat.innerHTML = err
             setTimeout(()=>{
@@ -261,6 +366,7 @@ const Page = {
     }
     update();
     window.sendText = sendText;
+    window.globalScrollChat = globalScrollChat;
   }
 }
 //End Page
@@ -274,6 +380,7 @@ window.SendEmailVerify = SendEmailVerify;
 window.home = Page.Home;
 window.global = Page.GlobalChat;
 window.logOut = logOut;
+window.editname = EditName;
 //Page
 window.login = Page.Login;
 //End Export
