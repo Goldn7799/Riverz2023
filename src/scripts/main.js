@@ -12,7 +12,7 @@ import {
   } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
 const provider = new GoogleAuthProvider();
 const root = document.getElementById("root");
-const API = "https://3cf8-104-196-123-87.ngrok.io"
+const API = "https://1ecf-114-5-250-233.ap.ngrok.io"
 //End Setup
 
 //Variable Setup
