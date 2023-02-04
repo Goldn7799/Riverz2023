@@ -10,17 +10,18 @@ import {
   createUserWithEmailAndPassword, 
   sendEmailVerification
   } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-auth.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
 const provider = new GoogleAuthProvider();
 const root = document.getElementById("root");
-const API = "https://1ecf-114-5-250-233.ap.ngrok.io"
 //End Setup
 
 //Variable Setup
-let data = {}, dataUser = {}, providerId, names, globalChatActived, homeActivated, userUpdate = false, userIDS=0, userCIDS=0, dataC = {};
+let API, data = {}, dataUser = {}, providerId, names, globalChatActived, homeActivated, userUpdate = false, userIDS=0, userCIDS=0, dataC = {};
 //End Variable Setup
 
 //Check
 const auth = getAuth();
+const db = getDatabase();
 onAuthStateChanged(auth, (user)=>{
   if(user){
     user.providerData.map((datas)=>{
@@ -48,46 +49,50 @@ onAuthStateChanged(auth, (user)=>{
           "Photo": "./src/assets/profile.png"
         }
       }
-      fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
-        dataUser = res;
-        dataUser.map(dts=>{
-          userCIDS++;
-          if(dts.id === data.Id){
-            userUpdate = true;
-            userIDS = userCIDS-1;
-            dataC = dts;
-          };
-        })
-        if(!userUpdate){
-          fetch(`${API}/RiverzRequest`, {
-            method: 'POST', // or 'PUT'
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              "avabile": false,
-              "edit": false,
-              "profile": data.Photo,
-              "name": data.Username,
-              "text": "",
-              "id": data.Id,
-              "date": ""
-            })
+      const rAPI = ref(db, "global/api");
+      onValue(rAPI, (resData)=>{
+        API = resData.val();
+        fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
+          dataUser = res;
+          dataUser.map(dts=>{
+            userCIDS++;
+            if(dts.id === data.Id){
+              userUpdate = true;
+              userIDS = userCIDS-1;
+              dataC = dts;
+            };
           })
-            .then((response) => { return response.json() })
-            .then((datas) => {
-              console.log("SUCCES Load")
-              // console.log('Success:', data);
+          if(!userUpdate){
+            fetch(`${API}/RiverzRequest`, {
+              method: 'POST', // or 'PUT'
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                "avabile": false,
+                "edit": false,
+                "profile": data.Photo,
+                "name": data.Username,
+                "text": "",
+                "id": data.Id,
+                "date": ""
+              })
             })
-            .catch((error) => {
-              alert("Error", error)
-              // console.error('Error:', error);
-          });
-        }else {
-          data.Username = dataC.name;
-        }
-      }).catch(err=>{ alert("Server Closed"); })
-      Page.Home();
+              .then((response) => { return response.json() })
+              .then((datas) => {
+                console.log("SUCCES Load")
+                // console.log('Success:', data);
+              })
+              .catch((error) => {
+                alert("Error", error)
+                // console.error('Error:', error);
+            });
+          }else {
+            data.Username = dataC.name;
+          }
+        }).catch(err=>{ alert("Server Closed"); })
+        Page.Home();
+      });
     }else {
       Page.Verify();
     }
@@ -286,7 +291,7 @@ const Page = {
         </filter>
       </defs>
     </svg></center></div>
-    <table class="tableSend">
+    <table id="tableSend">
       <tr>
         <td><button class="down" onClick="globalScrollChat()">Down</button></td>
         <td><input type="text" id="textChat" name="chat" placeholder="Texts"></td>
@@ -294,6 +299,7 @@ const Page = {
       </tr>
     </table>
     `
+    document.getElementById("tableSend").style.width = `${screen.width}px`
     const chat = document.getElementById("chat");
     let cacheChat, currentChat, anotherUserProfile, chatsCount, anotherUserName;
     const sendText = (text)=>{
@@ -360,7 +366,7 @@ const Page = {
             chat.innerHTML = err
             setTimeout(()=>{
               update()
-            }, 5000)
+            }, 2500)
         })
       };
     }
