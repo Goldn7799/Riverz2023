@@ -293,13 +293,13 @@ const Page = {
     </svg></center></div>
     <table id="tableSend">
       <tr>
-        <td><button class="down" onClick="globalScrollChat()">Down</button></td>
-        <td><input type="text" id="textChat" name="chat" placeholder="Texts"></td>
         <td><div id="sendD"><button id="send" onClick="sendText(document.getElementById('textChat').value)">Send</button></div></td>
+        <td><input type="text" id="textChat" name="chat" placeholder="Texts"></td>
+        <td><button class="down" onClick="globalScrollChat()">Down</button></td>
       </tr>
     </table>
     `
-    document.getElementById("tableSend").style.width = `${screen.width}px`
+    // document.getElementById("tableSend").style.width = `${screen.width/2}px`
     const chat = document.getElementById("chat");
     let cacheChat, currentChat, anotherUserProfile, chatsCount, anotherUserName;
     const sendText = (text)=>{

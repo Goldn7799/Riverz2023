@@ -210,6 +210,15 @@
   }
 }
 
+#tableSend {
+  /* position: absolute; */
+  width: 100%;
+  top: 0;
+  left: 0;
+  bottom:0;
+  right:0;
+}
+
 .profileChat {
   margin-left: 10px;
   margin-right: 5px;
