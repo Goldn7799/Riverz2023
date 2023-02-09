@@ -13,6 +13,8 @@ import {
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.16.0/firebase-database.js";
 const provider = new GoogleAuthProvider();
 const root = document.getElementById("root");
+const devMode = false;
+let webMode = "light"
 //End Setup
 
 //Variable Setup
@@ -51,7 +53,11 @@ onAuthStateChanged(auth, (user)=>{
       }
       const rAPI = ref(db, "global/api");
       onValue(rAPI, (resData)=>{
-        API = resData.val();
+        if(devMode){
+          API = "http://localhost:3000"
+        }else {
+          API = resData.val();
+        }
         fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
           dataUser = res;
           dataUser.map(dts=>{
@@ -84,13 +90,27 @@ onAuthStateChanged(auth, (user)=>{
                 // console.log('Success:', data);
               })
               .catch((error) => {
-                alert("Error", error)
+                // alert("Error", error)
+                Notipin.Alert({
+                  msg: `Error : ${error}`, // Pesan kamu
+                  yes: "OKEH", // Tulisan di tombol 'Yes'
+                  onYes: () => { /* Kode di sini */ },
+                  type: "DANGER",
+                  mode: webMode
+                })
                 // console.error('Error:', error);
             });
           }else {
             data.Username = dataC.name;
           }
-        }).catch(err=>{ alert("Server Closed"); })
+        }).catch(err=>{ 
+          Notipin.Alert({
+          msg: `Server Closed`, // Pesan kamu
+          yes: "OKEH", // Tulisan di tombol 'Yes'
+          onYes: () => { /* Kode di sini */ },
+          type: "DANGER",
+          mode: webMode
+        }) })
         Page.Home();
       });
     }else {
@@ -123,7 +143,13 @@ const GoogleLogin = ()=>{
     const email = error.customData.email;
     // The AuthCredential type that was used.
     const credential = GoogleAuthProvider.credentialFromError(error);
-    alert(errorMessage)
+    Notipin.Alert({
+      msg: `${errorMessage}`, // Pesan kamu
+      yes: "OKEH", // Tulisan di tombol 'Yes'
+      onYes: () => { /* Kode di sini */ },
+      type: "NORMAL",
+      mode: webMode
+    })
     // ...
   });
 }
@@ -138,7 +164,13 @@ const EmailLogin = (email, password)=>{
   .catch((error) => {
     const errorCode = error.code;
     const errorMessage = error.message;
-    alert(errorMessage)
+    Notipin.Alert({
+      msg: `${errorMessage}`, // Pesan kamu
+      yes: "OKEH", // Tulisan di tombol 'Yes'
+      onYes: () => { /* Kode di sini */ },
+      type: "NORMAL",
+      mode: webMode
+    })
   });
 }
 
@@ -153,49 +185,117 @@ const EmailRegister = (email, password)=>{
     const errorCode = error.code;
     const errorMessage = error.message;
     // ..
-    alert(errorMessage)
+    Notipin.Alert({
+      msg: `${error}`, // Pesan kamu
+      yes: "OKEH", // Tulisan di tombol 'Yes'
+      onYes: () => { /* Kode di sini */ },
+      type: "NORMAL",
+      mode: webMode
+    })
   });
 }
 
 const SendEmailVerify = ()=>{
   sendEmailVerification(auth.currentUser).then(()=>{
-    alert("email verify Sent")
-  }).catch((err)=>{ alert(err.message) })
+    Notipin.Alert({
+      msg: `Email Verify Sent`, // Pesan kamu
+      yes: "OKEH", // Tulisan di tombol 'Yes'
+      onYes: () => { /* Kode di sini */ },
+      type: "INFO",
+      mode: webMode
+    })
+  }).catch((err)=>{ 
+    Notipin.Alert({
+      msg: `${err}`, // Pesan kamu
+      yes: "OKEH", // Tulisan di tombol 'Yes'
+      onYes: () => { /* Kode di sini */ },
+      type: "NORMAL",
+      mode: webMode
+    })
+  })
 }
 
-const logOut = () => signOut(auth);
+const logOut = () => {
+  
+  Notipin.Confirm({
+    msg: "Yakin Ingin LogOut?", // Pesan kamu
+    yes: "IYA", // Tulisan di tombol 'Yes'
+    no: "NGGA", // Tulisan di tombol 'No'
+    onYes: () => { signOut(auth) },
+    onNo: () => { /* Kode di sini */ },
+    type: "DANGER",
+    mode: webMode,
+  })
+};
 
 const EditName = ()=>{
-  let names = prompt("New Name");
-  if(names&&!names.includes("<")&&!names.includes(">")){
-    fetch(`${API}/RiverzRequest`, {
-      method: 'POST', // or 'PUT'
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        "avabile": false,
-        "edit": userIDS,
-        "profile": data.Photo,
-        "name": names,
-        "text": "",
-        "id": data.Id,
-        "date": ""
+  Notipin.Prompt({
+  msg: "Masukkan Nama Baru", // Pesan kamu
+  placeholder: "Contoh 'Yusril GG'",
+  max: 0, // Maksimal karakter (integer)
+  textarea: false, // tag element (boolean)
+  yes: "Next", // Tulisan di tombol 'Yes'
+  no: "BATAL", // Tulisan di tombol 'No'
+  onYes: (res) => { 
+    let names = res;
+    if(names&&!names.includes("<")&&!names.includes(">")){
+      fetch(`${API}/RiverzRequest`, {
+        method: 'POST', // or 'PUT'
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          "avabile": false,
+          "edit": userIDS,
+          "profile": data.Photo,
+          "name": names,
+          "text": "",
+          "id": data.Id,
+          "date": ""
+        })
       })
-    })
-      .then((response) => { return response.json() })
-      .then((datas) => {
-        alert("Sukses Ganti Nama");
-        window.location.reload();
-        // console.log('Success:', data);
+        .then((response) => { return response.json() })
+        .then((datas) => {
+          // alert("Sukses Ganti Nama");
+          Notipin.Alert({
+            msg: "Sukses Ganti Nama", // Pesan kamu
+            yes: "OKE", // Tulisan di tombol 'Yes'
+            onYes: () => { /* Kode di sini */ },
+            type: "INFO",
+            mode: webMode,
+          })
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+          // console.log('Success:', data);
+        })
+        .catch((error) => {
+          // alert("Gagal Mengubah Nama", error)
+          Notipin.Alert({
+            msg: `Gagal Mengubah Nama ${error}`, // Pesan kamu
+            yes: "OKEH", // Tulisan di tombol 'Yes'
+            onYes: () => { /* Kode di sini */ },
+            type: "DANGER",
+            mode: webMode,
+          })
+          // console.error('Error:', error);
+      });
+    }else{
+      // alert("NAMA KOSONG ATAU MENGANDUNG KARAKTER ILEGAL < or >")
+      Notipin.Alert({
+        msg: "NAMA KAMU KOSONG ATAU MENGANDUNG KARAKTER ILEGAL SEPERTI < ATAU >", // Pesan kamu
+        yes: "OKE", // Tulisan di tombol 'Yes'
+        onYes: () => { /* Kode di sini */ },
+        type: "DANGER",
+        mode: webMode,
       })
-      .catch((error) => {
-        alert("Gagal Mengubah Nama", error)
-        // console.error('Error:', error);
-    });
-  }else{
-    alert("NAMA KOSONG ATAU MENGANDUNG KARAKTER ILEGAL < or >")
-  }
+    }
+  },
+  onNo: (res) => { /* Kode di sini */ },
+  type: "BLUE",
+  mode: webMode,
+  })
+  
 }
 //end Auth
 
@@ -269,7 +369,16 @@ const Page = {
     globalChatActived = true;
     fetch(`${API}/RiverzUser`, { method: "GET" }).then(ress=>{ return ress.json() }).then(res=>{
       dataUser = res;
-    }).catch(err=>{ alert("Server Closed"); Page.Home(); })
+    }).catch(err=>{
+      Notipin.Alert({
+        msg: `Server Closed : ${err}`, // Pesan kamu
+        yes: "OKEH", // Tulisan di tombol 'Yes'
+        onYes: () => { /* Kode di sini */ },
+        type: "DANGER",
+        mode: webMode
+      }) 
+      Page.Home(); 
+    })
     root.innerHTML = `<h1>Global Chat</h1><button onClick="home()">Back</button><button id="chatsCount">0 Chats</button>
     <div id="chat"><center><div class="jelly"></div>
 
@@ -301,7 +410,7 @@ const Page = {
     `
     // document.getElementById("tableSend").style.width = `${screen.width/2}px`
     const chat = document.getElementById("chat");
-    let cacheChat, currentChat, anotherUserProfile, chatsCount, anotherUserName;
+    let cacheChat, currentChat, anotherUserProfile, chatsCount, anotherUserName, chatsId;
     const sendText = (text)=>{
       let dates = Date();
       if (text&&(!text.includes("<"))&&(!text.includes(">"))){
@@ -325,12 +434,71 @@ const Page = {
             // console.log('Success:', data);
           })
           .catch((error) => {
-            alert("Error", error)
+            document.getElementById("sendD").innerHTML = `<button id="send" onClick="sendText(document.getElementById('textChat').value)">Send</button>`
+            Notipin.Alert({
+              msg: `Error : ${error}`, // Pesan kamu
+              yes: "OKEH", // Tulisan di tombol 'Yes'
+              onYes: () => { /* Kode di sini */ },
+              type: "DANGER",
+              mode: webMode
+            })
             // console.error('Error:', error);
-        });
+          });
       }else {
-        alert("Chat Kosong/mengandung huruf ilagal seperi <,>")
+        // alert("Chat Kosong/mengandung huruf ilagal seperi <,>")
+        Notipin.Alert({
+          msg: "Chat Kosong/mengandung huruf ilagal seperi <,>", // Pesan kamu
+          yes: "OKE", // Tulisan di tombol 'Yes'
+          onYes: () => { /* Kode di sini */ },
+          type: "INFO",
+          mode: webMode,
+        })
       }
+    }
+    const delChat = (arrayId)=>{
+      if(arrayId){
+        Notipin.Confirm({
+          msg: "Yakin Ingin Delete Chat?", // Pesan kamu
+          yes: "Iya", // Tulisan di tombol 'Yes'
+          no: "Ngga", // Tulisan di tombol 'No'
+          onYes: () => { fetch(`${API}/RiverzRequest`, {
+          method: 'POST', // or 'PUT'
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            "avabile": "DEL",
+            "text": arrayId,
+            "id": data.Id
+          })
+        })
+          .then((response) => response.json())
+          .then((datas) => {
+            Notipin.Alert({
+              msg: `Sukses Delete Chat`, // Pesan kamu
+              yes: "OKEH", // Tulisan di tombol 'Yes'
+              onYes: () => { /* Kode di sini */ },
+              type: "NORMAL",
+              mode: webMode
+            })
+            // console.log('Success:', data);
+          })
+          .catch((error) => {
+            Notipin.Alert({
+              msg: `Error : ${error}`, // Pesan kamu
+              yes: "OKEH", // Tulisan di tombol 'Yes'
+              onYes: () => { /* Kode di sini */ },
+              type: "DANGER",
+              mode: webMode
+            })
+            // console.error('Error:', error);
+          }); },
+          onNo: () => { /* Kode di sini */ },
+          type: "BLUE",
+          mode: webMode
+        })
+        
+      };
     }
     const globalScrollChat = ()=>{
       chat.scrollTop = chat.scrollHeight
@@ -338,25 +506,27 @@ const Page = {
     const update = ()=>{
       cacheChat = ``;
       chatsCount = 0;
+      chatsId = 0;
       if(globalChatActived){
         fetch(`${API}/RiverzChat`, {method: "GET"}).then(ress => { return ress.json() }).then(res =>{
-          res.map(data => {
+          res.map(datas => {
             anotherUserProfile = "";
             chatsCount++;
+            chatsId++;
             dataUser.map(dt=>{
-              if (dt.id === data.id){
+              if (dt.id === datas.id){
                 anotherUserProfile = dt.profile;
                 anotherUserName = dt.name;
               }
             })
-            cacheChat += `<p><img class="profileChat" src="${(anotherUserProfile) ? anotherUserProfile : "./src/assets/profile.png"}">${(anotherUserName) ? anotherUserName : "NoName"} | ${data.date}=> ${data.text}</p>`
+            cacheChat += `<p><img class="profileChat" src="${(anotherUserProfile) ? anotherUserProfile : "./src/assets/profile.png"}">${(anotherUserName) ? anotherUserName : "NoName"} |${(datas.id === data.Id) ? ` <button onClick="delChat('${chatsId-1}')">DEL</button> |` : ``} ${datas.date}=> ${datas.text}</p>`
           });
-          chat.innerHTML = cacheChat;
-          document.getElementById("chatsCount").innerHTML = `${chatsCount} Chat Loaded`
           setTimeout(() => {
             if(currentChat !== cacheChat&&chatsCount > 6){
-              chat.scrollTop = chat.scrollHeight
+              chat.innerHTML = cacheChat;
+              document.getElementById("chatsCount").innerHTML = `${chatsCount} Chat Loaded`;
               currentChat = cacheChat;
+              chat.scrollTop = chat.scrollHeight;
             };
             setTimeout(()=>{
               update()
@@ -372,6 +542,7 @@ const Page = {
     }
     update();
     window.sendText = sendText;
+    window.delChat = delChat;
     window.globalScrollChat = globalScrollChat;
   }
 }
